@@ -1,0 +1,5 @@
+{"id":"1","source":"example","task":"build","turn":"turn-1","kind":"started","title":"示例构建任务","project":"/tmp/example","timestamp":"2026-09-18T12:00:00Z"}
+{"id":"2","source":"example","task":"build","turn":"turn-1","kind":"approvalRequested","request":"approval-1","timestamp":"2026-09-18T12:00:01Z"}
+{"id":"3","source":"example","task":"build","turn":"turn-1","kind":"requestResolved","request":"approval-1","timestamp":"2026-09-18T12:00:02Z"}
+{"id":"4","source":"example","task":"build","turn":"turn-1","kind":"retrying","timestamp":"2026-09-18T12:00:03Z"}
+{"id":"5","source":"example","task":"build","turn":"turn-1","kind":"completed","timestamp":"2026-09-18T12:00:04Z"}
