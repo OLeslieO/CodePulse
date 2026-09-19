@@ -3,7 +3,11 @@ import AppKit
 import SignalCore
 import SignalMac
 
+enum DetailTab: Hashable { case tasks, usage, settings }
+
 @MainActor final class Model: ObservableObject {
+    @Published var detailTab: DetailTab = .tasks
+    @Published private(set) var observedSince: [String: Date] = [:]
     @Published var preferences = Preferences.load()
     @Published var records: [TaskRecord] = []
     @Published var history: [HistoryEntry] = []
@@ -39,8 +43,14 @@ import SignalMac
 
     var showMenu: Bool { active.showMenu }
     var ledEnabled: Bool { active.ledEnabled }
+    var ledBlinkInterval: TimeInterval { active.blinkInterval }
     var isPackyUsage: Bool { active.selectedUsageProvider == .packyCode }
     var usageProviderTitle: String { active.selectedUsageProvider.label }
+    var usageEnabled: Bool { active.usageEnabled }
+    var activeCount: Int { shownRecords.filter { $0.isRunning || $0.mode == .blink }.count }
+    var activityLabel: String {
+        mode == .blink ? "需要处理" : (mode == .solid ? "正在运行" : "待机")
+    }
     private var usesDesktop: Bool { active.codexSocket.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
     var shownRecords: [TaskRecord] {
@@ -174,7 +184,20 @@ import SignalMac
         engine.apply(event); recalculate()
     }
     private func recalculate() {
-        records = engine.records.values.sorted { $0.updatedAt > $1.updatedAt }
+        let latest = engine.records.values.sorted { $0.updatedAt > $1.updatedAt }
+        let previous = Dictionary(uniqueKeysWithValues: records.map { ($0.id, $0) })
+        var starts = observedSince
+        for record in latest {
+            if record.isRunning || record.mode == .blink {
+                if starts[record.id] == nil || previous[record.id]?.turn != record.turn {
+                    starts[record.id] = Date()
+                }
+            } else { starts.removeValue(forKey: record.id) }
+        }
+        let ids = Set(latest.map(\.id))
+        starts = starts.filter { ids.contains($0.key) }
+        if starts != observedSince { observedSince = starts }
+        records = latest
         mode = engine.mode(for: shownRecords)
         changed?()
     }
